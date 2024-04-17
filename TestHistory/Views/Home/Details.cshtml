@@ -1,0 +1,120 @@
+﻿@using TestHistory.Business
+@model TestResult[]
+
+@{
+    var trs = Model;
+}
+
+@if (trs.Length == 0)
+{
+    return;
+}
+@{
+    ViewData["Title"] = trs.First().PipeId;
+}
+<div class="main">
+    <div class="primary">
+        @foreach (var prop in trs.First().Properties)
+        {
+            <div>
+                <label>@prop.Key</label>
+                <label>@prop.Value</label>
+            </div>
+        }
+        @foreach (var trjbs in trs.GroupBy(x => x.JobId))
+        {
+            var jbprs = @trjbs.First().Properties;
+            var jobName = jbprs.ContainsKey("jobname") ? jbprs["jobname"] : "-";
+            <label>
+                @jobName
+            </label>
+            @foreach (var tr in trjbs)
+            {
+                var diff = (int)(DateTime.Parse(tr.RunResult.Times.Finish) - DateTime.Parse(tr.RunResult.Times.Start)).TotalSeconds;
+                var min = diff / 60;
+                var sec = diff % 60;
+                var counters = tr.RunResult.ResultSummary.Counters;
+
+                <label>@tr.RunResult.Name</label>
+                <label>t: @(min > 0 ? min + "m " : "")@(sec + "s")</label>
+                <div>Total : @counters.Executed</div>
+                <div>Passed: @counters.Passed</div>
+                <div>Failed: @(counters.Executed - counters.Passed)</div>
+                <div>Others: @(counters.Total - counters.Executed)</div>
+                <div>percent: @(100 * (double)counters.Passed / counters.Executed)</div>
+
+                <div>
+                    @{
+                        var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
+                    }
+
+                    @foreach (var testDef in tr.RunResult.TestDefinitions.UnitTest.GroupBy(x => x.TestMethod.CodeBase))
+                    {
+                        var testDll = @testDef.First().TestMethod.CodeBase.Split('\\').Last();
+                        <label>@testDll</label>
+                        var testIds = testDef.Select(x => x.Id);
+                        @foreach (var runResult in tr.RunResult.Results.UnitTestResults.Where(x => testIds.Contains(x.TestId)))
+                        {
+                            var output = "";
+                            if (runResult.Output != null)
+                            {
+                                output = runResult.Output.StdOut;
+                            } 
+                            var test = testDef.First(x => x.Id == runResult.TestId);
+                            <div class="test-result"
+                                data-output="@output" data-def-class="@(test.TestMethod.ClassName)" data-def-method="@(test.TestMethod.Name)" onclick="clickTest(this)">
+                                <span>@test.Name</span>
+                                <span>@runResult.Duration</span>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        }
+
+
+    </div>
+    <div class="secondary">
+        <div>Тут инфа</div>
+    </div>
+</div>
+
+<script>
+    function clickTest(elem){
+        var className = $(elem).data('def-class');
+        var methodName = $(elem).data('def-method');
+        $('.secondary div').html(className + ' ' + methodName);
+        $('.main').addClass('details');
+    }
+</script>
+
+<style>
+    .primary {
+        width: 100%;
+        display: inline-block;
+    }
+
+    .details .primary {
+        width: 60%;
+        display: inline-block;
+    }
+
+    .secondary {
+        background-color: pink;
+        display: none;
+    }
+    .details .secondary{
+        width: 40%;
+        display: block;
+        vertical-align: top;
+        position: fixed;
+        top: 100px;
+        height: 500px;
+        right: 0;
+    }
+
+    .test-result{
+        cursor: pointer;
+    }
+
+</style>
