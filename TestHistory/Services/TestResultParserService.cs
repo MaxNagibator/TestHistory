@@ -110,8 +110,11 @@ namespace TestHistory.Services
                     var byDelimeter = propsText.Split(';');
                     foreach (var splt in byDelimeter)
                     {
-                        var keyValue = splt.Split('=');
-                        r.Properties.Add(keyValue[0], keyValue[1]);
+                        if (splt.Contains("="))
+                        {
+                            var keyValue = splt.Split('=');
+                            r.Properties.Add(keyValue[0], keyValue[1]);
+                        }
                     }
                 }
             }

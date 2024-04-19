@@ -52,8 +52,10 @@ namespace TestHistory.Business
         public string EndTime { get; set; }
         [XmlAttribute(AttributeName = "testType")]
         public string TestType { get; set; }
+
         [XmlAttribute(AttributeName = "outcome")]
         public string Outcome { get; set; }
+
         [XmlAttribute(AttributeName = "testListId")]
         public string TestListId { get; set; }
         [XmlAttribute(AttributeName = "relativeResultsDirectory")]

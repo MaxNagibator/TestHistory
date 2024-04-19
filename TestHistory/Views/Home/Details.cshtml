@@ -25,51 +25,63 @@
         {
             var jbprs = @trjbs.First().Properties;
             var jobName = jbprs.ContainsKey("jobname") ? jbprs["jobname"] : "-";
-            <label>
-                @jobName
-            </label>
-            @foreach (var tr in trjbs)
-            {
-                var diff = (int)(DateTime.Parse(tr.RunResult.Times.Finish) - DateTime.Parse(tr.RunResult.Times.Start)).TotalSeconds;
-                var min = diff / 60;
-                var sec = diff % 60;
-                var counters = tr.RunResult.ResultSummary.Counters;
+            <div class="test-result-job">
+                <label>
+                    @jobName
+                </label>
+                @foreach (var tr in trjbs)
+                {
+                    var diff = (int)(DateTime.Parse(tr.RunResult.Times.Finish) - DateTime.Parse(tr.RunResult.Times.Start)).TotalSeconds;
+                    var min = diff / 60;
+                    var sec = diff % 60;
+                    var counters = tr.RunResult.ResultSummary.Counters;
 
-                <label>@tr.RunResult.Name</label>
-                <label>t: @(min > 0 ? min + "m " : "")@(sec + "s")</label>
-                <div>Total : @counters.Executed</div>
-                <div>Passed: @counters.Passed</div>
-                <div>Failed: @(counters.Executed - counters.Passed)</div>
-                <div>Others: @(counters.Total - counters.Executed)</div>
-                <div>percent: @(100 * (double)counters.Passed / counters.Executed)</div>
+                    @* <label>@tr.RunResult.Name</label> *@
+                    <label>t: @(min > 0 ? min + "m " : "")@(sec + "s")</label>
+                    <label>Total : @counters.Executed</label>
+                    <label>Passed: @counters.Passed</label>
+                    <label>Failed: @(counters.Executed - counters.Passed)</label>
+                    <label>Others: @(counters.Total - counters.Executed)</label>
+                    <label>percent: @(100 * (double)counters.Passed / counters.Executed)</label>
 
-                <div>
-                    @{
-                        var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
-                    }
+                    <div>
+                        @{
+                            var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
+                        }
 
-                    @foreach (var testDef in tr.RunResult.TestDefinitions.UnitTest.GroupBy(x => x.TestMethod.CodeBase))
-                    {
-                        var testDll = @testDef.First().TestMethod.CodeBase.Split('\\').Last();
-                        <label>@testDll</label>
-                        var testIds = testDef.Select(x => x.Id);
-                        @foreach (var runResult in tr.RunResult.Results.UnitTestResults.Where(x => testIds.Contains(x.TestId)))
+                        @*     @foreach (var testDef in tr.RunResult.TestDefinitions.UnitTest.GroupBy(x => x.TestMethod.CodeBase).OrderBy(x=>x.Key))
+                {
+                var testDll = @testDef.First().TestMethod.CodeBase.Split('\\').Last();
+                <label>@testDll</label>
+                var testIds = testDef.Select(x => x.Id); *@
+                        @foreach (var runResult in tr.RunResult.Results.UnitTestResults//.Where(x => testIds.Contains(x.TestId))
+                       .OrderByDescending(x => x.Outcome == "Failed")
+                       .ThenByDescending(x => x.Outcome == "Passed")
+                       .ThenBy(x => x.TestName))
                         {
                             var output = "";
                             if (runResult.Output != null)
                             {
                                 output = runResult.Output.StdOut;
-                            } 
-                            var test = testDef.First(x => x.Id == runResult.TestId);
+                            }
+                            var test = tr.RunResult.TestDefinitions.UnitTest.First(x => x.Id == runResult.TestId);
+                            var testDll = test.TestMethod.CodeBase.Split('\\').Last();
+                            //var test = testDef.First(x => x.Id == runResult.TestId);
                             <div class="test-result"
-                                data-output="@output" data-def-class="@(test.TestMethod.ClassName)" data-def-method="@(test.TestMethod.Name)" onclick="clickTest(this)">
+                                 data-output="@output"
+                                 data-def-class="@(test.TestMethod.ClassName)"
+                                 data-def-method="@(test.TestMethod.Name)"
+                                 data-def-dll="@testDll"
+                                 onclick="clickTest(this)">
+                                <span>@runResult.Outcome</span>
                                 <span>@test.Name</span>
                                 <span>@runResult.Duration</span>
                             </div>
                         }
-                    }
-                </div>
-            }
+                        @*      } *@
+                    </div>
+                }
+            </div>
         }
 
 
@@ -80,10 +92,11 @@
 </div>
 
 <script>
-    function clickTest(elem){
+    function clickTest(elem) {
         var className = $(elem).data('def-class');
         var methodName = $(elem).data('def-method');
-        $('.secondary div').html(className + ' ' + methodName);
+        var dllName = $(elem).data('def-dll');
+        $('.secondary div').html(dllName + ' ' + className + ' ' + methodName);
         $('.main').addClass('details');
     }
 </script>
@@ -103,7 +116,8 @@
         background-color: pink;
         display: none;
     }
-    .details .secondary{
+
+    .details .secondary {
         width: 40%;
         display: block;
         vertical-align: top;
@@ -113,8 +127,11 @@
         right: 0;
     }
 
-    .test-result{
+    .test-result {
         cursor: pointer;
+    }
+
+    .test-result-job {
     }
 
 </style>
