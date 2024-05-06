@@ -4,5 +4,6 @@ namespace TestHistory.Models
     {
         public string PipeId { get; set; }
         public string Title { get; set; }
+        public string Branch { get; set; }
     }
 }

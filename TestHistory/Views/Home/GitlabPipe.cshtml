@@ -1,0 +1,11 @@
+﻿@using TestHistory.Business
+@model GitlabPipeDetails
+
+@{
+    var pipe = Model;
+}
+
+<div>
+    <img src="@pipe.User.AvatarUrl" style="max-width:50px; display: block;"/>
+    <label title="@pipe.User.Username">@pipe.User.Name</label>
+</div>

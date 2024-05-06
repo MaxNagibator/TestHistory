@@ -14,19 +14,31 @@
 }
 <div class="main">
     <div class="primary">
-        @foreach (var prop in trs.First().Properties)
+        <div>
+            <label>Ветка: @trs.First().Branch</label>
+        </div>
+        <div>
+            <label>SHA: @trs.First().GetProperty("commitsha")</label>
+        </div>
+        <div>
+            <label>@trs.First().GetProperty("committitle")</label>
+        </div>
+        <div id="GitlabContainer">
+        </div>
+
+        @*        @foreach (var prop in trs.First().Properties)
         {
-            <div>
-                <label>@prop.Key</label>
-                <label>@prop.Value</label>
-            </div>
-        }
+        <div>
+        <label>@prop.Key</label>
+        <label>@prop.Value</label>
+        </div>
+        } *@
         @foreach (var trjbs in trs.GroupBy(x => x.JobId))
         {
             var jbprs = @trjbs.First().Properties;
             var jobName = jbprs.ContainsKey("jobname") ? jbprs["jobname"] : "-";
             <div class="test-result-job">
-                <label>
+                <label class="job-name" onclick="clickTestResultJob(this)">
                     @jobName
                 </label>
                 @foreach (var tr in trjbs)
@@ -35,16 +47,26 @@
                     var min = diff / 60;
                     var sec = diff % 60;
                     var counters = tr.RunResult.ResultSummary.Counters;
-
-                    @* <label>@tr.RunResult.Name</label> *@
-                    <label>t: @(min > 0 ? min + "m " : "")@(sec + "s")</label>
-                    <label>Total : @counters.Executed</label>
-                    <label>Passed: @counters.Passed</label>
-                    <label>Failed: @(counters.Executed - counters.Passed)</label>
-                    <label>Others: @(counters.Total - counters.Executed)</label>
-                    <label>percent: @(100 * (double)counters.Passed / counters.Executed)</label>
-
-                    <div>
+                    <span class="job-stat">
+                        @* <label>@tr.RunResult.Name</label> *@
+                        <span>t: @(min > 0 ? min + "m " : "")@(sec + "s")</span>
+                        <span>
+                            Total: <label>@counters.Executed</label>
+                        </span>
+                        <span>
+                            Passed: <label>@counters.Passed</label>
+                        </span>
+                        <span>
+                            Failed: <label>@(counters.Executed - counters.Passed)</label>
+                        </span>
+                        <span>
+                            Others: <label>@(counters.Total - counters.Executed)</label>
+                        </span>
+                        <span>
+                            Percent: <label>@(100 * (double)counters.Passed / counters.Executed)</label>
+                        </span>
+                    </span>
+                    <div class="test-results-container">
                         @{
                             var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
                         }
@@ -72,7 +94,7 @@
                                  data-def-class="@(test.TestMethod.ClassName)"
                                  data-def-method="@(test.TestMethod.Name)"
                                  data-def-dll="@testDll"
-                                 onclick="clickTest(this)">
+                                 onclick="clickTest(this, event)">
                                 <span>@runResult.Outcome</span>
                                 <span>@test.Name</span>
                                 <span>@runResult.Duration</span>
@@ -93,12 +115,33 @@
 
 <script>
     function clickTest(elem) {
-        var className = $(elem).data('def-class');
-        var methodName = $(elem).data('def-method');
-        var dllName = $(elem).data('def-dll');
+        let className = $(elem).data('def-class');
+        let methodName = $(elem).data('def-method');
+        let dllName = $(elem).data('def-dll');
         $('.secondary div').html(dllName + ' ' + className + ' ' + methodName);
         $('.main').addClass('details');
     }
+
+    function clickTestResultJob(elem) {
+        let container = $(elem).closest('.test-result-job');
+        if ($(container).hasClass('show-test-results')) {
+            $(container).removeClass('show-test-results');
+        } else {
+            $(container).addClass('show-test-results');
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function () {
+        SendRequest({
+            url: '/Home/GetDataFromGitlabPipe?pipeId=@(trs.First().PipeId)',
+            method: 'GET',
+            success: function (data) {
+                $('#GitlabContainer').html(data.responseText);
+            },
+            error: function (data) {
+                console.error(data);
+            }
+        });
+    });
 </script>
 
 <style>
@@ -127,11 +170,30 @@
         right: 0;
     }
 
+    .test-results-container {
+        display: none;
+    }
+
+    .show-test-results .test-results-container {
+        display: block;
+    }
+
     .test-result {
         cursor: pointer;
     }
 
     .test-result-job {
+        border: 1px solid gray;
+        border-radius: 5px;
+        margin: 2px;
     }
 
+        .test-result-job .job-name {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .test-result-job .job-stat label {
+            font-weight: bold;
+        }
 </style>

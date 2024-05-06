@@ -4,8 +4,14 @@
     {
         public Guid Id { get; set; }
         public Dictionary<string, string> Properties { get; set; }
-        public string PipeId => Properties.ContainsKey("pipe") ? Properties["pipe"] : "-";
-        public string JobId => Properties.ContainsKey("job") ? Properties["job"] : "-";
+        public string PipeId => GetProperty("pipe");
+        public string JobId => GetProperty("jobid");
+        public string Branch => GetProperty("branch");
         public TestRunTrx RunResult { get; set; }
+
+        public string GetProperty(string key)
+        {
+            return Properties.ContainsKey(key) ? Properties[key] : null;
+        }
     }
 }

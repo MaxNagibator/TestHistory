@@ -1,10 +1,22 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Рунчики";
 }
 @model RunDetails[]
 
 <label>Ранчики</label>
 @foreach (var s in Model)
 {
-    <a href="/Home/Pipe/@(s.PipeId)">@s.Title</a>
+    <div>
+        <a href="/Home/Pipe/@(s.PipeId)">@s.PipeId</a> <label>@s.Branch</label>
+        <i class="fa fa-check"></i>
+        <a href="https://gitlab.agroassist.ru/fullstack/web.agrohistoryv2/-/pipelines/@(s.PipeId)/test_report">
+            <img src="/images/gitlab.png" class="gitlab-icon" />
+        </a>
+    </div>
 }
+
+<style>
+    .gitlab-icon{
+        max-width: 24px;
+    }
+</style>

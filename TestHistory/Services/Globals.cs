@@ -14,6 +14,9 @@ namespace TestHistory.Services
     public class Settings
     {
         public string DataPath { get; set; }
+
+        public string GitlabAccessToken { get; set; }
+
         /// <summary>
         /// Сюда заливаем свежие результаты.
         /// </summary>

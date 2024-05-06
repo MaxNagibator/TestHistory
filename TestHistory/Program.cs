@@ -13,6 +13,7 @@ var app = builder.Build();
 Globals.Settings = new Settings
 {
     DataPath = builder.Configuration["DataPath"],
+    GitlabAccessToken = builder.Configuration["GitlabAccessToken"],
 };
 Globals.Settings.Init();
 
