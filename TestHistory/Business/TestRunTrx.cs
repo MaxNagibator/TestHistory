@@ -66,11 +66,22 @@ namespace TestHistory.Business
         public ResultFiles ResultFiles { get; set; }
     }
 
+    [XmlRoot(ElementName = "ErrorInfo", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+    public class ErrorInfo
+    {
+        [XmlElement(ElementName = "Message", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+        public string Message { get; set; }
+        [XmlElement(ElementName = "StackTrace", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+        public string StackTrace { get; set; }
+    }
+
     [XmlRoot(ElementName = "Output", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
     public class Output
     {
         [XmlElement(ElementName = "StdOut", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
         public string StdOut { get; set; }
+        [XmlElement(ElementName = "ErrorInfo", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+        public ErrorInfo ErrorInfo { get; set; }
     }
 
     [XmlRoot(ElementName = "ResultFile", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]

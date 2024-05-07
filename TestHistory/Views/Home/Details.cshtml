@@ -42,76 +42,103 @@
         {
             var jbprs = @trjbs.First().Properties;
             var jobName = jbprs.ContainsKey("jobname") ? jbprs["jobname"] : "-";
-            <div class="test-result-job">
-                <label class="job-name" onclick="clickTestResultJob(this)">
-                    @jobName
+            <div>
+                <label class="job-name">
+                    @jobName:
                 </label>
-                @foreach (var tr in trjbs)
+                @{
+                    var runNumber = 0;
+                }
+                @foreach (var tr in trjbs.OrderBy(x => x.RunResult.Times.Start))
                 {
+                    runNumber++;
                     var diff = (int)(DateTime.Parse(tr.RunResult.Times.Finish) - DateTime.Parse(tr.RunResult.Times.Start)).TotalSeconds;
                     var min = diff / 60;
                     var sec = diff % 60;
                     var counters = tr.RunResult.ResultSummary.Counters;
-                    <div>
-                    <span class="job-stat" data-id="@tr.Id">
-                        @* <label>@tr.RunResult.Name</label> *@
-                        <span>t: @(min > 0 ? min + "m " : "")@(sec + "s")</span>
-                        <span>
-                            Total: <label>@counters.Executed</label>
-                        </span>
-                        <span>
-                            Passed: <label>@counters.Passed</label>
-                        </span>
-                        <span>
-                            Failed: <label>@(counters.Executed - counters.Passed)</label>
-                        </span>
-                        <span>
-                            Others: <label>@(counters.Total - counters.Executed)</label>
-                        </span>
-                        <span>
+                    <div class="test-result-job">
+                        <div onclick="clickTestResultJob(this)" style="padding-left:5px;">
+                            <label>run: @runNumber</label>
+                            <span class="job-stat" data-id="@tr.Id">
+                                @* <label>@tr.RunResult.Name</label> *@
+                                <span>t: @(min > 0 ? min + "m " : "")@(sec + "s")</span>
+                                <span>
+                                    Total: <label>@counters.Executed</label>
+                                </span>
+                                <span>
+                                    Passed: <label>@counters.Passed</label>
+                                </span>
+                                <span>
+                                    Failed: <label>@(counters.Executed - counters.Passed)</label>
+                                </span>
+                                <span>
+                                    Others: <label>@(counters.Total - counters.Executed)</label>
+                                </span>
+                                <span>
+                                    @{
+                                        var passPercent = 100 * (double)counters.Passed / counters.Executed;
+                                        var passPercentText = Math.Round(passPercent, 2);
+                                    }
+                                    Percent: <label>@(passPercentText)</label>
+                                </span>
+                            </span>
+                        </div>
+                        <div class="test-results-container">
                             @{
-                                var passPercent = 100 * (double)counters.Passed / counters.Executed;
-                                var passPercentText = Math.Round(passPercent, 2);
+                                var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
                             }
-                            Percent: <label>@(passPercentText)</label>
-                        </span>
-                    </span>
-                    </div>
-                    <div class="test-results-container">
-                        @{
-                            var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
-                        }
 
-                        @*     @foreach (var testDef in tr.RunResult.TestDefinitions.UnitTest.GroupBy(x => x.TestMethod.CodeBase).OrderBy(x=>x.Key))
-                {
-                var testDll = @testDef.First().TestMethod.CodeBase.Split('\\').Last();
-                <label>@testDll</label>
-                var testIds = testDef.Select(x => x.Id); *@
-                        @foreach (var runResult in tr.RunResult.Results.UnitTestResults//.Where(x => testIds.Contains(x.TestId))
-                       .OrderByDescending(x => x.Outcome == "Failed")
-                       .ThenByDescending(x => x.Outcome == "Passed")
-                       .ThenBy(x => x.TestName))
-                        {
-                            var output = "";
-                            if (runResult.Output != null)
+                            @*     @foreach (var testDef in tr.RunResult.TestDefinitions.UnitTest.GroupBy(x => x.TestMethod.CodeBase).OrderBy(x=>x.Key))
+                    {
+                    var testDll = @testDef.First().TestMethod.CodeBase.Split('\\').Last();
+                    <label>@testDll</label>
+                    var testIds = testDef.Select(x => x.Id); *@
+                            @foreach (var runResult in tr.RunResult.Results.UnitTestResults//.Where(x => testIds.Contains(x.TestId))
+                           .OrderByDescending(x => x.Outcome == "Failed")
+                           .ThenByDescending(x => x.Outcome == "Passed")
+                           .ThenBy(x => x.TestName))
                             {
-                                output = runResult.Output.StdOut;
+                                var output = "";
+                                if (runResult.Output != null)
+                                {
+                                    output = runResult.Output.StdOut;
+                                }
+                                var test = tr.RunResult.TestDefinitions.UnitTest.First(x => x.Id == runResult.TestId);
+                                var testDll = test.TestMethod.CodeBase.Split('\\').Last();
+                                //var test = testDef.First(x => x.Id == runResult.TestId);
+                                <div class="test-result"
+                                     data-output="@output"
+                                     data-def-class="@(test.TestMethod.ClassName)"
+                                     data-def-method="@(test.TestMethod.Name)"
+                                     data-def-dll="@testDll"
+                                     data-def-stdout="@(runResult.Output?.StdOut ?? "-")"
+                                     data-def-error-message="@(runResult.Output?.ErrorInfo?.Message ?? "-")"
+                                     data-def-error-stacktrace="@(runResult.Output?.ErrorInfo?.StackTrace ?? "-")"
+                                     onclick="clickTest(this, event)">
+                                    <span>
+                                        @if (runResult.Outcome == "Failed")
+                                        {
+                                            <i class="fa fa-remove test-result-failed"></i>
+                                        }
+                                        else if (runResult.Outcome == "Passed")
+                                        {
+                                            <i class="fa fa-check test-result-passed"></i>
+                                        }
+                                        else if (runResult.Outcome == "NotExecuted")
+                                        {
+                                            <i class="fa fa-cancel test-result-not-executed"></i>
+                                        }
+                                        else
+                                        {
+                                            @runResult.Outcome
+                                        }
+                                    </span>
+                                    <span>@test.Name</span>
+                                    <span>@runResult.Duration</span>
+                                </div>
                             }
-                            var test = tr.RunResult.TestDefinitions.UnitTest.First(x => x.Id == runResult.TestId);
-                            var testDll = test.TestMethod.CodeBase.Split('\\').Last();
-                            //var test = testDef.First(x => x.Id == runResult.TestId);
-                            <div class="test-result"
-                                 data-output="@output"
-                                 data-def-class="@(test.TestMethod.ClassName)"
-                                 data-def-method="@(test.TestMethod.Name)"
-                                 data-def-dll="@testDll"
-                                 onclick="clickTest(this, event)">
-                                <span>@runResult.Outcome</span>
-                                <span>@test.Name</span>
-                                <span>@runResult.Duration</span>
-                            </div>
-                        }
-                        @*      } *@
+                            @*      } *@
+                        </div>
                     </div>
                 }
             </div>
@@ -119,17 +146,40 @@
     </div>
 
     <div class="secondary">
-        <div>Тут инфа</div>
+        <div class="test-dll">Тут инфа</div>
+        <div class="test-name">Тут инфа</div>
+        <div class="test-label" onclick="swap('test-stdout')">stdout:</div>
+        <div class="test-block test-stdout" style="white-space: pre-line;"></div>
+        <div class="test-label" onclick="swap('test-error-message')">error message:</div>
+        <div class="test-block test-error-message">Тут инфа</div>
+        <div class="test-label" onclick="swap('test-error-stack')">stack trace:</div>
+        <div class="test-block test-error-stack">Тут инфа</div>
     </div>
 </div>
 
 <script>
     function clickTest(elem) {
+        let dllName = $(elem).data('def-dll');
         let className = $(elem).data('def-class');
         let methodName = $(elem).data('def-method');
-        let dllName = $(elem).data('def-dll');
-        $('.secondary div').html(dllName + ' ' + className + ' ' + methodName);
+        let stdout = $(elem).data('def-stdout');
+        let errorMessage = $(elem).data('def-error-message');
+        let errorStackTrace = $(elem).data('def-error-stacktrace');
+        $('.secondary .test-dll').text(dllName);
+        $('.secondary .test-name').text(className + ' ' + methodName);
+        $('.secondary .test-stdout').text(stdout);
+        $('.secondary .test-error-message').text(errorMessage);
+        $('.secondary .test-error-stack').text(errorStackTrace);
         $('.main').addClass('details');
+    }
+
+    function swap(className) {
+        let container = '.' + className;
+        if ($(container).hasClass('show-details')) {
+            $(container).removeClass('show-details');
+        } else {
+            $(container).addClass('show-details');
+        }
     }
 
     function clickTestResultJob(elem) {
@@ -166,9 +216,15 @@
     }
 
     .secondary {
-        background-color: pink;
+        background-color: lightblue;
         display: none;
+        font-size: 14px;
+        overflow: scroll;
     }
+
+        .secondary div {
+            white-space: pre-line;
+        }
 
     .details .secondary {
         width: 40%;
@@ -176,7 +232,7 @@
         vertical-align: top;
         position: fixed;
         top: 100px;
-        height: 500px;
+        height: 80%;
         right: 0;
     }
 
@@ -186,6 +242,7 @@
 
     .show-test-results .test-results-container {
         display: block;
+        padding-left: 5px;
     }
 
     .test-result {
@@ -193,6 +250,7 @@
     }
 
     .test-result-job {
+        cursor: pointer;
         border: 1px solid gray;
         border-radius: 5px;
         margin: 2px;
@@ -206,4 +264,37 @@
         .test-result-job .job-stat label {
             font-weight: bold;
         }
+
+    .test-label {
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        border: 1px solid black;
+        margin: 2px 5px;
+        padding: 2px;
+    }
+
+    .test-block {
+        display: none;
+        border: 1px solid black;
+        margin: 2px 5px;
+        padding: 2px;
+    }
+
+        .test-block.show-details {
+            display: flex;
+            overflow-y: hidden;
+        }
+
+    .test-result-not-executed {
+        color: darkgray;
+    }
+
+    .test-result-passed {
+        color: darkgreen;
+    }
+
+    .test-result-failed {
+        color: darkred;
+    }
 </style>
