@@ -1,5 +1,4 @@
-﻿
-namespace TestHistory.Services
+﻿namespace TestHistory.Business
 {
     public static class Globals
     {
@@ -9,6 +8,12 @@ namespace TestHistory.Services
         /// Чтоб не начать обрабатывать неполноценные данные (например недоконца разархивированную папку).
         /// </summary>
         public static string CompliteFileName = "prepared";
+
+        public static string PipeIdParamName = "pipe";
+        public static string JobIdParamName = "jobid";
+        public static string BranchParamName = "branch";
+        public static string CommitShaParamName = "commitsha";
+        public static string CommitTitleParamName = "committitle";
     }
 
     public class Settings
@@ -32,6 +37,11 @@ namespace TestHistory.Services
         /// </summary>
         public string ResultsPath => Path.Combine(DataPath, "Results");
 
+        /// <summary>
+        /// Инфу с гитлаба не будем лишний раз дёргать.
+        /// </summary>
+        public string GitlabCachePath => Path.Combine(DataPath, "GitlabCache");
+
         public void Init()
         {
             if (!Directory.Exists(UploadPath))
@@ -45,6 +55,10 @@ namespace TestHistory.Services
             if (!Directory.Exists(ResultsPath))
             {
                 Directory.CreateDirectory(ResultsPath);
+            }
+            if (!Directory.Exists(GitlabCachePath))
+            {
+                Directory.CreateDirectory(GitlabCachePath);
             }
         }
     }

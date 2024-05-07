@@ -1,3 +1,4 @@
+using NLog.Web;
 using TestHistory.Business;
 using TestHistory.Services;
 
@@ -7,6 +8,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHostedService<TestResultParserService>();
 builder.Services.AddSingleton<TestResultKeeper>();
+builder.Services.AddSingleton<GitlabService>();
+
+builder.Host.UseNLog(new NLogAspNetCoreOptions()
+{
+    LoggingConfigurationSectionName = "NLog"
+});
 
 var app = builder.Build();
 

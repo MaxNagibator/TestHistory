@@ -1,13 +1,13 @@
 ﻿@{
     ViewData["Title"] = "Рунчики";
 }
-@model RunDetails[]
+@model TestHistory.Business.TestResultGroup[]
 
-<label>Ранчики</label>
+<label>Рунчики</label>
 @foreach (var s in Model)
 {
     <div>
-        <a href="/Home/Pipe/@(s.PipeId)">@s.PipeId</a> <label>@s.Branch</label>
+        <a href="/@(s.PipeId)">@s.PipeId</a> <label>@s.Branch</label>
         <i class="fa fa-check"></i>
         <a href="https://gitlab.agroassist.ru/fullstack/web.agrohistoryv2/-/pipelines/@(s.PipeId)/test_report">
             <img src="/images/gitlab.png" class="gitlab-icon" />
@@ -16,7 +16,4 @@
 }
 
 <style>
-    .gitlab-icon{
-        max-width: 24px;
-    }
 </style>

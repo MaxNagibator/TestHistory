@@ -86,10 +86,10 @@ namespace TestHistory.Models
         public object CommittedAt { get; set; }
 
         [JsonProperty("duration")]
-        public int Duration { get; set; }
+        public int? Duration { get; set; }
 
         [JsonProperty("queued_duration")]
-        public int QueuedDuration { get; set; }
+        public int? QueuedDuration { get; set; }
 
         [JsonProperty("coverage")]
         public object Coverage { get; set; }

@@ -20,3 +20,7 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.gitlab-icon {
+    max-width: 24px;
+}

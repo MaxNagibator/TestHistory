@@ -5,7 +5,6 @@ namespace TestHistory.Services
 {
     public class TestResultParserService : IHostedService, IDisposable
     {
-        private int executionCount = 0;
         private readonly ILogger<TestResultParserService> _logger;
         private readonly TestResultKeeper _testResultKeeper;
         private Timer? _timer = null;
@@ -24,15 +23,14 @@ namespace TestHistory.Services
             var dateDirs = Directory.GetDirectories(Globals.Settings.ResultsPath);
             foreach (var dateDir in dateDirs.OrderBy(x => x))
             {
-                _logger.LogInformation("check " + dateDir);
                 var dirs = Directory.GetDirectories(dateDir);
                 foreach (var dir in dirs)
                 {
-                    _logger.LogInformation("check " + dateDir);
+                    _logger.LogInformation("check " + dir);
                     var result = ProcessTestDir(dir);
                     if (result != null)
                     {
-                        var success = _testResultKeeper.Add(result);
+                        var success = _testResultKeeper.AddTestResult(result);
                         if (!success)
                         {
                             _logger.LogWarning(result.Id + " exists");
@@ -57,7 +55,7 @@ namespace TestHistory.Services
                 var result = ProcessTestDir(dir);
                 if (result != null)
                 {
-                    var success = _testResultKeeper.Add(result);
+                    var success = _testResultKeeper.AddTestResult(result);
                     if (!success)
                     {
                         // такой уже есть, выкидываем в помойку

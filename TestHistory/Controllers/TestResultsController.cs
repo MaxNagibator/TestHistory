@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using TestHistory.Services;
+using TestHistory.Business;
+
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -36,7 +37,7 @@ namespace TestHistory.Controllers
         [HttpPost("CreateFromZip")]
         public int CreateFromZip()
         {
-            var properties = string.Join(";", Request.Query.Keys.Select(key => key.ToLower() + "=" + Request.Query[key].ToString().ToLower()));
+            var properties = string.Join(";", Request.Query.Keys.Select(key => key.ToLower() + "=" + Request.Query[key].ToString()));
             var a = 1;
             var file2 = Request.Form.Files[0];
             var fileStream = file2.OpenReadStream();

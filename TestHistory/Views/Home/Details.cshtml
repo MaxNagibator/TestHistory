@@ -1,39 +1,44 @@
 ﻿@using TestHistory.Business
-@model TestResult[]
+@model TestResultGroup
 
 @{
-    var trs = Model;
+    var testResultGroup = Model;
 }
 
-@if (trs.Length == 0)
-{
-    return;
-}
 @{
-    ViewData["Title"] = trs.First().PipeId;
+    var gitlabUrl = "https://gitlab.agroassist.ru/fullstack/web.agrohistoryv2";
+    var pipeId = testResultGroup.PipeId;
+    var branch = testResultGroup.Branch;
+    var commitSHA = testResultGroup.CommitSha;
+    var commitSHAshort = commitSHA != null && commitSHA.Length > 6 ? commitSHA.Substring(0, 6) : null;
+    var commitTitle = testResultGroup.CommitTitle;
+    var userName = testResultGroup.GitlabData?.User?.Name ?? "unknown";
+    var userNickname = testResultGroup.GitlabData?.User?.Username ?? "unknown";
+    var userAva = testResultGroup.GitlabData?.User?.AvatarUrl;
+    ViewData["Title"] = pipeId;
 }
 <div class="main">
     <div class="primary">
-        <div>
-            <label>Ветка: @trs.First().Branch</label>
+        <h2>@commitTitle</h2>
+        <div style="display: inline-block">
+            <a href="@(gitlabUrl)/-/pipelines/@(pipeId)/test_report">
+                <img src="/images/gitlab.png" class="gitlab-icon" />
+            </a>
+        </div>
+        <div style="display: inline-block">
+            <a href="@(gitlabUrl)/-/tree/@(branch)?ref_type=heads">@branch</a>
         </div>
         <div>
-            <label>SHA: @trs.First().GetProperty("commitsha")</label>
+            @if (userAva != null)
+            {
+                <img src="@testResultGroup.GitlabData.User.AvatarUrl" style="border-radius: 25px; max-width: 50px; display: inline-block;" />
+            }
+            <label title="@userNickname">@userName</label> created for commit <a href="@(gitlabUrl)/-/commit/@(commitSHA)">@commitSHAshort</a>
         </div>
         <div>
-            <label>@trs.First().GetProperty("committitle")</label>
-        </div>
-        <div id="GitlabContainer">
         </div>
 
-        @*        @foreach (var prop in trs.First().Properties)
-        {
-        <div>
-        <label>@prop.Key</label>
-        <label>@prop.Value</label>
-        </div>
-        } *@
-        @foreach (var trjbs in trs.GroupBy(x => x.JobId))
+        @foreach (var trjbs in testResultGroup.TestResults.GroupBy(x => x.JobId))
         {
             var jbprs = @trjbs.First().Properties;
             var jobName = jbprs.ContainsKey("jobname") ? jbprs["jobname"] : "-";
@@ -47,7 +52,8 @@
                     var min = diff / 60;
                     var sec = diff % 60;
                     var counters = tr.RunResult.ResultSummary.Counters;
-                    <span class="job-stat">
+                    <div>
+                    <span class="job-stat" data-id="@tr.Id">
                         @* <label>@tr.RunResult.Name</label> *@
                         <span>t: @(min > 0 ? min + "m " : "")@(sec + "s")</span>
                         <span>
@@ -63,9 +69,14 @@
                             Others: <label>@(counters.Total - counters.Executed)</label>
                         </span>
                         <span>
-                            Percent: <label>@(100 * (double)counters.Passed / counters.Executed)</label>
+                            @{
+                                var passPercent = 100 * (double)counters.Passed / counters.Executed;
+                                var passPercentText = Math.Round(passPercent, 2);
+                            }
+                            Percent: <label>@(passPercentText)</label>
                         </span>
                     </span>
+                    </div>
                     <div class="test-results-container">
                         @{
                             var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
@@ -105,9 +116,8 @@
                 }
             </div>
         }
-
-
     </div>
+
     <div class="secondary">
         <div>Тут инфа</div>
     </div>
@@ -130,18 +140,18 @@
             $(container).addClass('show-test-results');
         }
     }
-    document.addEventListener("DOMContentLoaded", function () {
-        SendRequest({
-            url: '/Home/GetDataFromGitlabPipe?pipeId=@(trs.First().PipeId)',
-            method: 'GET',
-            success: function (data) {
-                $('#GitlabContainer').html(data.responseText);
-            },
-            error: function (data) {
-                console.error(data);
-            }
-        });
-    });
+    // document.addEventListener("DOMContentLoaded", function () {
+    //     SendRequest({
+    //         url: '/Home/GetDataFromGitlabPipe?pipeId=testResults.First().PipeId',
+    //         method: 'GET',
+    //         success: function (data) {
+    //             $('#GitlabContainer').html(data.responseText);
+    //         },
+    //         error: function (data) {
+    //             console.error(data);
+    //         }
+    //     });
+    // });
 </script>
 
 <style>
