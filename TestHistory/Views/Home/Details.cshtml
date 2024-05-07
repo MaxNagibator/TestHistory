@@ -40,8 +40,7 @@
 
         @foreach (var trjbs in testResultGroup.TestResults.GroupBy(x => x.JobId))
         {
-            var jbprs = @trjbs.First().Properties;
-            var jobName = jbprs.ContainsKey("jobname") ? jbprs["jobname"] : "-";
+            var jobName = @trjbs.First().JobName ?? "-";
             <div>
                 <label class="job-name">
                     @jobName:
@@ -56,8 +55,9 @@
                     var min = diff / 60;
                     var sec = diff % 60;
                     var counters = tr.RunResult.ResultSummary.Counters;
-                    <div class="test-result-job">
-                        <div onclick="clickTestResultJob(this)" style="padding-left:5px;">
+                    <div class="test-result-job" data-test-result-id="@tr.Id">
+                        <div onclick="clickTestResultJob(this)"
+                             style="padding-left:5px;">
                             <label>run: @runNumber</label>
                             <span class="job-stat" data-id="@tr.Id">
                                 @* <label>@tr.RunResult.Name</label> *@
@@ -106,6 +106,8 @@
                                 var test = tr.RunResult.TestDefinitions.UnitTest.First(x => x.Id == runResult.TestId);
                                 var testDll = test.TestMethod.CodeBase.Split('\\').Last();
                                 //var test = testDef.First(x => x.Id == runResult.TestId);
+                                var resultFilesPaths = runResult.ResultFiles?.List?.Select(x => x.Path).ToArray();
+                                var resultFiles = resultFilesPaths != null && resultFilesPaths.Length > 0 ? string.Join(";", resultFilesPaths) : "";
                                 <div class="test-result"
                                      data-output="@output"
                                      data-def-class="@(test.TestMethod.ClassName)"
@@ -114,6 +116,8 @@
                                      data-def-stdout="@(runResult.Output?.StdOut ?? "-")"
                                      data-def-error-message="@(runResult.Output?.ErrorInfo?.Message ?? "-")"
                                      data-def-error-stacktrace="@(runResult.Output?.ErrorInfo?.StackTrace ?? "-")"
+                                     data-def-relative-result-dir="@(runResult.RelativeResultsDirectory)"
+                                     data-def-result-files="@(resultFiles)"
                                      onclick="clickTest(this, event)">
                                     <span>
                                         @if (runResult.Outcome == "Failed")
@@ -145,15 +149,20 @@
         }
     </div>
 
-    <div class="secondary">
+    <div class="secondary" style="padding:5px;">
+        <div class="test-name" style="font-weight:bold; font-size:18px">Тут инфа</div>
+        <div class="test-class">Тут инфа</div>
         <div class="test-dll">Тут инфа</div>
-        <div class="test-name">Тут инфа</div>
         <div class="test-label" onclick="swap('test-stdout')">stdout:</div>
-        <div class="test-block test-stdout" style="white-space: pre-line;"></div>
+        <div class="test-block show-details test-stdout" style="white-space: pre-line;"></div>
         <div class="test-label" onclick="swap('test-error-message')">error message:</div>
-        <div class="test-block test-error-message">Тут инфа</div>
+        <div class="test-block show-details test-error-message">Тут инфа</div>
         <div class="test-label" onclick="swap('test-error-stack')">stack trace:</div>
-        <div class="test-block test-error-stack">Тут инфа</div>
+        <div class="test-block show-details test-error-stack">Тут инфа</div>
+        <div class="test-label" onclick="swap('test-result-files')">result files:</div>
+        <div class="test-block show-details test-result-files"></div>
+    </div>
+    <div class="fullscreen hidden" onclick="closeFullScreen(this)">
     </div>
 </div>
 
@@ -165,11 +174,35 @@
         let stdout = $(elem).data('def-stdout');
         let errorMessage = $(elem).data('def-error-message');
         let errorStackTrace = $(elem).data('def-error-stacktrace');
+        let resultFilesStr = $(elem).data('def-result-files');
+        let relativeResultDir = $(elem).data('def-relative-result-dir');
+        let testResultId = $(elem).closest('.test-result-job').data('test-result-id');
+        $('.secondary .test-name').text(methodName);
+        $('.secondary .test-class').text(className);
         $('.secondary .test-dll').text(dllName);
-        $('.secondary .test-name').text(className + ' ' + methodName);
         $('.secondary .test-stdout').text(stdout);
         $('.secondary .test-error-message').text(errorMessage);
         $('.secondary .test-error-stack').text(errorStackTrace);
+        $('.secondary .test-result-files').html('-');
+        if (resultFilesStr != undefined && resultFilesStr != "") {
+            console.log(resultFilesStr);
+            let resultFiles = resultFilesStr.split(';');
+            $('.secondary .test-error-files').text('');
+            let out = "";
+            for (let i = 0; i < resultFiles.length; i++) {
+                let path = resultFiles[i];
+                let pathSplit = path.split('\\');
+                let name = pathSplit[pathSplit.length - 1];
+                let fullPath = '/Files/' + testResultId + '/' + relativeResultDir + '/' + path;
+                out += '<div class="result-file"><label data-path="' + fullPath + '" style="cursor:pointer;padding-right:10px;">' + name + '</label><a href="' + fullPath + '">скачать</a></div>';
+            }
+            $('.secondary .test-result-files').html(out);
+            $('.secondary .result-file label').on('click', function () {
+                let fullPath = $(this).data('path');
+                $('.fullscreen').html('<img src="' + fullPath + '" style="width: 98%;margin: 1%; cursor:pointer;"> </img>');
+                $('.fullscreen').removeClass('hidden');
+            });
+        }
         $('.main').addClass('details');
     }
 
@@ -189,6 +222,10 @@
         } else {
             $(container).addClass('show-test-results');
         }
+    }
+
+    function closeFullScreen(elem) { 
+        $(elem).addClass('hidden'); 
     }
     // document.addEventListener("DOMContentLoaded", function () {
     //     SendRequest({
@@ -270,15 +307,15 @@
         font-weight: bold;
         cursor: pointer;
         border: 1px solid black;
-        margin: 2px 5px;
+        margin-top: 5px;
         padding: 2px;
     }
 
     .test-block {
         display: none;
         border: 1px solid black;
-        margin: 2px 5px;
         padding: 2px;
+        margin-top: 1px;
     }
 
         .test-block.show-details {
@@ -296,5 +333,17 @@
 
     .test-result-failed {
         color: darkred;
+    }
+
+    .fullscreen {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+    }
+    .hidden{
+        display: none;
     }
 </style>

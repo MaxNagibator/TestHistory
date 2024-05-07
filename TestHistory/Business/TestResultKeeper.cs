@@ -42,6 +42,11 @@ namespace TestHistory.Business
             return added;
         }
 
+        public TestResult GetTestResult(Guid resultId)
+        {
+            return Results[resultId];
+        }
+
         public TestResultGroup[] GetTestResultGroups()
         {
             return ResultGroups.Values.ToArray();

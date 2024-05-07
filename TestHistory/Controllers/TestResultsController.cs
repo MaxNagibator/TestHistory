@@ -31,7 +31,7 @@ namespace TestHistory.Controllers
         ///    $TheFileContent,
         ///    "--$boundary--$LF"
         ///) -join $LF
-        ///Invoke-RestMethod 'http://localhost:5047/api/TestResults/CreateFromZip?branch=dev-1&job=2&jobname=apitests&pipe=3'' -Method POST -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines
+        ///Invoke-RestMethod 'http://localhost:5047/api/TestResults/CreateFromZip?branch=dev-1&jobid=2&jobname=apitests&pipe=3'' -Method POST -ContentType "multipart/form-data; boundary=`"$boundary`"" -Body $bodyLines
         /// </remarks>
         /// <returns></returns>
         [HttpPost("CreateFromZip")]

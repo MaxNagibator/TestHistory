@@ -95,7 +95,7 @@ namespace TestHistory.Business
     public class ResultFiles
     {
         [XmlElement(ElementName = "ResultFile", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
-        public ResultFile ResultFile { get; set; }
+        public List<ResultFile> List { get; set; }
     }
 
     [XmlRoot(ElementName = "Results", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]

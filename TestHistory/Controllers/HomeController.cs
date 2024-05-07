@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.IO;
+using System.IO.Pipelines;
 using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -81,6 +83,33 @@ namespace TestHistory.Controllers
         //    var model = JsonConvert.DeserializeObject<GitlabPipeDetails>(responseString);
         //    return model;
         //}
+
+        [Route("/Files/{resultId}/{relativeResultsDirectory}/{*path}")]
+        public async Task<IActionResult> GetFile(Guid resultId, Guid relativeResultsDirectory, string path)
+        {
+            var result = _keeper.GetTestResult(resultId);
+            var root = result.RunResult.TestSettings.Deployment.RunDeploymentRoot;
+            var fullPath = Path.Combine(Globals.Settings.ResultsPath, result.DateDir, resultId.ToString(), root, "in", relativeResultsDirectory.ToString(), path);
+            //var path2 = "D:\\tmp\\TestHistory\\Data\\Results\\2024.04.26\\be98fc0f-df01-4ac4-9bb1-cc2a03a60996" +
+            //    "\\GitLabRunner_AZUREPIPE-01_2024-04-26_09_21_24\\In\\1cc1dd22-c3e4-4ea8-a1d4-1744552c54d5" +
+            //    "\\AZUREPIPE-01\\error_20240426_093303_026__DisableApprovalStatusTest.png";
+            //d:\tmp\TestHistory\Data\Results\be98fc0f-df01-4ac4-9bb1-cc2a03a60996\GitLabRunner_AZUREPIPE-01_2024-04-26_09_21_24\in\3957580f-6531-4ee4-9c92-3e87d1755bcb\AZUREPIPE-01\error_20240426_093645_497__AddTechnologyFromFieldInfoTest.png
+            var fileName = Path.GetFileName(fullPath);
+            string file_type = "image/png";
+            return File(System.IO.File.ReadAllBytes(fullPath), "image/png", fileName);
+
+            using (var str = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
+            {
+                return new FileStreamResult(str, file_type)
+                {
+                    FileDownloadName = fileName
+                };
+                return File(str, file_type, fileName);
+            }
+
+            return PhysicalFile(fullPath, file_type, fileName);
+            //http://localhost:5047/Files/be98fc0f-df01-4ac4-9bb1-cc2a03a60996/AZUREPIPE-01/error_20240426_093645_497__AddTechnologyFromFieldInfoTest.png
+        }
 
         public IActionResult Privacy()
         {

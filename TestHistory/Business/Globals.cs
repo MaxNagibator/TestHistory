@@ -11,6 +11,7 @@
 
         public static string PipeIdParamName = "pipe";
         public static string JobIdParamName = "jobid";
+        public static string JobNameParamName = "jobname";
         public static string BranchParamName = "branch";
         public static string CommitShaParamName = "commitsha";
         public static string CommitTitleParamName = "committitle";

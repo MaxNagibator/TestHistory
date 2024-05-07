@@ -23,13 +23,17 @@ namespace TestHistory.Services
             var dateDirs = Directory.GetDirectories(Globals.Settings.ResultsPath);
             foreach (var dateDir in dateDirs.OrderBy(x => x))
             {
+                _logger.LogInformation("check " + dateDir);
+                var dt = Path.GetFileName(dateDir);
                 var dirs = Directory.GetDirectories(dateDir);
                 foreach (var dir in dirs)
                 {
-                    _logger.LogInformation("check " + dir);
+                    var folderName = Path.GetFileName(dir);
+                    _logger.LogInformation("check " + folderName);
                     var result = ProcessTestDir(dir);
                     if (result != null)
                     {
+                        result.DateDir = dt;
                         var success = _testResultKeeper.AddTestResult(result);
                         if (!success)
                         {
@@ -55,6 +59,10 @@ namespace TestHistory.Services
                 var result = ProcessTestDir(dir);
                 if (result != null)
                 {
+                    //2024-04-16T14:43:08.2032627+07:00
+                    var date = DateTime.Parse(result.RunResult.Times.Start);
+                    var dt = date.ToString("yyyy.MM.dd");
+                    result.DateDir = dt;
                     var success = _testResultKeeper.AddTestResult(result);
                     if (!success)
                     {
@@ -63,9 +71,6 @@ namespace TestHistory.Services
                     }
                     else
                     {
-                        //2024-04-16T14:43:08.2032627+07:00
-                        var date = DateTime.Parse(result.RunResult.Times.Start);
-                        var dt = date.ToString("yyyy.MM.dd");
                         var target = Path.Combine(Globals.Settings.ResultsPath, dt);
                         if (!Directory.Exists(target))
                         {
