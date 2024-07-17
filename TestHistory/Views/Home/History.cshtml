@@ -1,0 +1,33 @@
+﻿@using TestHistory.Business
+@model List<HistoryRun>
+
+@{
+    var runs = Model;
+}
+
+@foreach (var run in runs.OrderByDescending(x => { return DateTime.Parse(x.TestResult.Times.Start); }))
+{
+    <div class="history-run">
+        @if (run.Outcome == TestOutcome.Failed)
+        {
+            <i class="fa fa-remove test-result-failed"></i>
+        }
+        else if (run.Outcome == TestOutcome.Passed)
+        {
+            <i class="fa fa-check test-result-passed"></i>
+        }
+        else if (run.Outcome == TestOutcome.NotExecuted)
+        {
+            <i class="fa fa-cancel test-result-not-executed"></i>
+        }
+        else
+        {
+            <i class="fa fa-question-circle"></i>
+        }
+        <div>
+            @(DateTime.Parse(run.TestResult.Times.Start).ToString("yyyy.MM.dd HH:mm:ss"))
+
+            <a href="@run.TestResult.PipeId">@run.TestResult.Branch</a>
+        </div>
+    </div>
+}

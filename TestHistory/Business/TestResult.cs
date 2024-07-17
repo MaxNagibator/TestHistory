@@ -1,4 +1,6 @@
-﻿namespace TestHistory.Business
+﻿using Microsoft.AspNetCore.Http;
+
+namespace TestHistory.Business
 {
     public class TestResult
     {
@@ -13,6 +15,11 @@
 
         public TestRunTrx RunResult { get; set; }
         public string DateDir { get; set; }
+
+        public string StorePath => Path.Combine(Globals.Settings.ResultsPath, DateDir, Id.ToString());
+        public string RunDeploymentRoot { get; set; }
+        public Counters TestCounters { get; set; }
+        public Times Times { get; internal set; }
 
         public string GetProperty(string key)
         {

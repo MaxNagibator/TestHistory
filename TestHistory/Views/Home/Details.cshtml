@@ -35,13 +35,15 @@
             }
             <label title="@userNickname">@userName</label> created for commit <a href="@(gitlabUrl)/-/commit/@(commitSHA)">@commitSHAshort</a>
         </div>
-        <div>
+        <div style="margin: 5px 0;">
+            <input id="searchByName" type="text" placeholder="Поиск по названию теста" style="width:49%" onchange="search()" />
+            <input id="searchByContent" type="text" placeholder="Поиск в содержании теста" style="width:49%" onchange="search()" />
         </div>
 
         @foreach (var trjbs in testResultGroup.TestResults.GroupBy(x => x.JobId))
         {
             var jobName = @trjbs.First().JobName ?? "-";
-            <div>
+            <div class="job-container">
                 <label class="job-name">
                     @jobName:
                 </label>
@@ -84,10 +86,10 @@
                             </span>
                         </div>
                         <div class="test-results-container">
-                            @{
-                                var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
-                            }
-
+                            @*        @{
+                    var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
+                    }
+                    *@
                             @*     @foreach (var testDef in tr.RunResult.TestDefinitions.UnitTest.GroupBy(x => x.TestMethod.CodeBase).OrderBy(x=>x.Key))
                     {
                     var testDll = @testDef.First().TestMethod.CodeBase.Split('\\').Last();
@@ -112,6 +114,7 @@
                                      data-output="@output"
                                      data-def-class="@(test.TestMethod.ClassName)"
                                      data-def-method="@(test.TestMethod.Name)"
+                                     data-def-name="@(test.Name)"
                                      data-def-dll="@testDll"
                                      data-def-stdout="@(runResult.Output?.StdOut ?? "-")"
                                      data-def-error-message="@(runResult.Output?.ErrorInfo?.Message ?? "-")"
@@ -151,6 +154,7 @@
 
     <div class="secondary" style="padding:5px;">
         <div class="test-name" style="font-weight:bold; font-size:18px">Тут инфа</div>
+        <div class="test-method">Тут инфа</div>
         <div class="test-class">Тут инфа</div>
         <div class="test-dll">Тут инфа</div>
         <div class="test-label" onclick="swap('test-stdout')">stdout:</div>
@@ -161,6 +165,8 @@
         <div class="test-block show-details test-error-stack">Тут инфа</div>
         <div class="test-label" onclick="swap('test-result-files')">result files:</div>
         <div class="test-block show-details test-result-files"></div>
+        <button class="test-history-btn" onclick="getHistory(this)">get history</button>
+        <div class="test-history"></div>
     </div>
     <div class="fullscreen hidden" onclick="closeFullScreen(this)">
     </div>
@@ -171,16 +177,19 @@
         let dllName = $(elem).data('def-dll');
         let className = $(elem).data('def-class');
         let methodName = $(elem).data('def-method');
+        let name = $(elem).data('def-name');
+
         let stdout = $(elem).data('def-stdout');
         let errorMessage = $(elem).data('def-error-message');
         let errorStackTrace = $(elem).data('def-error-stacktrace');
         let resultFilesStr = $(elem).data('def-result-files');
         let relativeResultDir = $(elem).data('def-relative-result-dir');
         let testResultId = $(elem).closest('.test-result-job').data('test-result-id');
-        $('.secondary .test-name').text(methodName);
+        $('.secondary .test-name').text(name);
+        $('.secondary .test-method').text(methodName);
         $('.secondary .test-class').text(className);
         $('.secondary .test-dll').text(dllName);
-        $('.secondary .test-stdout').text(stdout);
+        $('.secondary .test-stdout').text(stdout.toString());
         $('.secondary .test-error-message').text(errorMessage);
         $('.secondary .test-error-stack').text(errorStackTrace);
         $('.secondary .test-result-files').html('-');
@@ -203,7 +212,25 @@
                 $('.fullscreen').removeClass('hidden');
             });
         }
+
+        $('.secondary .test-history-btn').data('test-name', className + '.' + methodName);
+        $('.secondary .test-history').html('');
+
         $('.main').addClass('details');
+    }
+
+    function getHistory(elem) {
+        let testName = $(elem).data('test-name');
+        SendRequest({
+            url: '/History/' + testName,
+            method: 'GET',
+            success: function (data) {
+                $('.secondary .test-history').html(data.responseText);
+            },
+            error: function (data) {
+                console.error(data);
+            }
+        });
     }
 
     function swap(className) {
@@ -224,21 +251,53 @@
         }
     }
 
-    function closeFullScreen(elem) { 
-        $(elem).addClass('hidden'); 
+    function closeFullScreen(elem) {
+        $(elem).addClass('hidden');
     }
-    // document.addEventListener("DOMContentLoaded", function () {
-    //     SendRequest({
-    //         url: '/Home/GetDataFromGitlabPipe?pipeId=testResults.First().PipeId',
-    //         method: 'GET',
-    //         success: function (data) {
-    //             $('#GitlabContainer').html(data.responseText);
-    //         },
-    //         error: function (data) {
-    //             console.error(data);
-    //         }
-    //     });
-    // });
+
+    function search() {
+        let searchByName = $('#searchByName').val();
+        let searchByContent = $('#searchByContent').val();
+        let jobContainers = $('.job-container');
+        for (let i = 0; i < jobContainers.length; i++) {
+            let oneVisible = false;
+
+            let testResults = $(jobContainers[i]).find('.test-result');
+            for (let j = 0; j < testResults.length; j++) {
+                testResult = testResults[j];
+                let isVisible = true;
+                if (searchByName != "") {
+                    let testResultName = $(testResult).data('def-name');
+                    isVisible = testResultName.toLowerCase().includes(searchByName.toLowerCase());
+                }
+                if (searchByContent != "") {
+                    let stdout = $(testResult).data('def-stdout').toString();
+                    let errorMessage = $(testResult).data('def-error-message');
+                    let errorStackTrace = $(testResult).data('def-error-stacktrace');
+                    let isVisible1 = stdout == "" ? false : stdout.toLowerCase().includes(searchByContent.toLowerCase());
+                    let isVisible2 = errorMessage == "" ? false : errorMessage.toLowerCase().includes(searchByContent.toLowerCase());
+                    let isVisible3 = errorStackTrace == "" ? false : errorStackTrace.toLowerCase().includes(searchByContent.toLowerCase());
+                    isVisible = isVisible && (isVisible1 || isVisible2 || isVisible3);
+                }
+                if (isVisible) {
+                    oneVisible = true;
+                    $(testResult).removeClass('hidden');
+                } else {
+                    $(testResult).addClass('hidden');
+                }
+            }
+            if (oneVisible) {
+                $(jobContainers[i]).removeClass('hidden');
+            } else {
+                $(jobContainers[i]).addClass('hidden');
+            }
+            if ((searchByName != "" || searchByContent != "") && oneVisible) {
+                $(jobContainers[i]).find('.test-result-job').addClass('show-test-results');
+            } else {
+                $(jobContainers[i]).find('.test-result-job').removeClass('show-test-results');
+            }
+        }
+    }
 </script>
 
 <style>
@@ -261,6 +320,7 @@
 
         .secondary div {
             white-space: pre-line;
+            line-break: anywhere;
         }
 
     .details .secondary {
@@ -320,7 +380,6 @@
 
         .test-block.show-details {
             display: flex;
-            overflow-y: hidden;
         }
 
     .test-result-not-executed {
@@ -335,6 +394,7 @@
         color: darkred;
     }
 
+
     .fullscreen {
         position: absolute;
         left: 0;
@@ -343,7 +403,22 @@
         height: 100%;
         background: black;
     }
-    .hidden{
+
+    .hidden {
         display: none;
+    }
+
+    .test-history,
+    .test-history div {
+        white-space: initial !important;
+    }
+
+    .history-run div,
+    .history-run i {
+        display: inline-block;
+    }
+
+    .history-run,
+    .history-run div {
     }
 </style>

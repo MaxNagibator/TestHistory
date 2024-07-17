@@ -1,4 +1,6 @@
-﻿namespace TestHistory.Business
+﻿using Microsoft.AspNetCore.Rewrite;
+
+namespace TestHistory.Business
 {
     public static class Globals
     {
@@ -15,6 +17,12 @@
         public static string BranchParamName = "branch";
         public static string CommitShaParamName = "commitsha";
         public static string CommitTitleParamName = "committitle";
+        public static Dictionary<string, TestOutcome> TestOutcomes = new Dictionary<string, TestOutcome>
+        {
+             { "Passed", TestOutcome.Passed },
+             { "Failed", TestOutcome.Failed },
+             { "NotExecuted", TestOutcome.NotExecuted },
+        };
     }
 
     public class Settings

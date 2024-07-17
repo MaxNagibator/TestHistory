@@ -80,7 +80,7 @@ namespace TestHistory.Models
         public DateTime StartedAt { get; set; }
 
         [JsonProperty("finished_at")]
-        public DateTime FinishedAt { get; set; }
+        public DateTime? FinishedAt { get; set; }
 
         [JsonProperty("committed_at")]
         public object CommittedAt { get; set; }
