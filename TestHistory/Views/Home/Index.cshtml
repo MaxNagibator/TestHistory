@@ -4,16 +4,48 @@
 @model TestHistory.Business.TestResultGroup[]
 
 <label>Рунчики</label>
+<div style="margin: 5px 0;">
+    <input id="search" type="text" placeholder="Поиск по имени ветки" style="width:49%" onchange="search()" />
+</div>
 @foreach (var s in Model)
 {
-    <div>
-        <a href="/@(s.PipeId)">@s.PipeId</a> <label>@s.Branch</label>
-        <i class="fa fa-check"></i>
-        <a href="https://gitlab.agroassist.ru/fullstack/web.agrohistoryv2/-/pipelines/@(s.PipeId)/test_report">
+    <div class="main-test-result" data-branch="@s.Branch">
+        <a href="/@(s.PipeId)">@s.PipeId</a>
+        <a href="https://gitlab.agroassist.ru/fullstack/web.agrohistoryv2/-/pipelines/@(s.PipeId)/test_report" class="gitlab-link">
             <img src="/images/gitlab.png" class="gitlab-icon" />
         </a>
+        <label>@s.Branch</label>
+        @foreach (var rg in s.TestResults.GroupBy(x => x.JobName))
+        {
+            var r = rg.OrderBy(x => x.Times.Start).Last();
+            if (r.TestCounters.Failed == 0)
+            {
+                <i class="fa fa-check-circle success-color" title="@r.JobName"></i>
+            }
+            else
+            {
+                <i class="fa fa-warning danger-color" title="@r.JobName"></i>
+            }
+        }
     </div>
 }
 
-<style>
-</style>
+<script>
+    function search() {
+        let search = $('#search').val();
+        let testResults = $('.main-test-result');
+        for (let i = 0; i < testResults.length; i++) {
+            let branch = $(testResults[i]).data('branch');
+            debugger
+            let isVisible = true;
+            if (search != "") {
+                isVisible = branch.toLowerCase().includes(search.toLowerCase());
+            }
+            if (isVisible) {
+                $(testResults[i]).removeClass('hidden');
+            } else {
+                $(testResults[i]).addClass('hidden');
+            }
+        }
+    }
+</script>

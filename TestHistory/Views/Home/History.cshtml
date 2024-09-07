@@ -1,8 +1,8 @@
 ﻿@using TestHistory.Business
-@model List<HistoryRun>
+@model HistoryModel
 
 @{
-    var runs = Model;
+    var runs = Model.HistoryRuns;
 }
 
 @foreach (var run in runs.OrderByDescending(x => { return DateTime.Parse(x.TestResult.Times.Start); }))
@@ -27,7 +27,7 @@
         <div>
             @(DateTime.Parse(run.TestResult.Times.Start).ToString("yyyy.MM.dd HH:mm:ss"))
 
-            <a href="@run.TestResult.PipeId">@run.TestResult.Branch</a>
+            <a href="/ByTestName/@run.TestResult.PipeId/@Model.TestName">@run.TestResult.Branch</a>
         </div>
     </div>
 }

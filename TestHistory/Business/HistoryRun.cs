@@ -6,5 +6,6 @@ namespace TestHistory.Business
     {
         public TestOutcome Outcome { get; set; }
         public TestResult TestResult { get; set; }
+        public string TestName { get; set; }
     }
 }

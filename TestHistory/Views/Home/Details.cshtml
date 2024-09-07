@@ -45,6 +45,14 @@
             var jobName = @trjbs.First().JobName ?? "-";
             <div class="job-container">
                 <label class="job-name">
+                    @if (trjbs.OrderBy(x => x.RunResult.Times.Start).Last().RunResult.ResultSummary.Counters.Failed == 0)
+                    {
+                        <i class="fa fa-check-circle success-color"></i>
+                    }
+                    else
+                    {
+                        <i class="fa fa-warning danger-color"></i>
+                    }
                     @jobName:
                 </label>
                 @{
@@ -86,15 +94,6 @@
                             </span>
                         </div>
                         <div class="test-results-container">
-                            @*        @{
-                    var runResults = tr.RunResult.Results.UnitTestResults.GroupBy(x => x.TestId, x => x);
-                    }
-                    *@
-                            @*     @foreach (var testDef in tr.RunResult.TestDefinitions.UnitTest.GroupBy(x => x.TestMethod.CodeBase).OrderBy(x=>x.Key))
-                    {
-                    var testDll = @testDef.First().TestMethod.CodeBase.Split('\\').Last();
-                    <label>@testDll</label>
-                    var testIds = testDef.Select(x => x.Id); *@
                             @foreach (var runResult in tr.RunResult.Results.UnitTestResults//.Where(x => testIds.Contains(x.TestId))
                            .OrderByDescending(x => x.Outcome == "Failed")
                            .ThenByDescending(x => x.Outcome == "Passed")
@@ -129,11 +128,11 @@
                                         }
                                         else if (runResult.Outcome == "Passed")
                                         {
-                                            <i class="fa fa-check test-result-passed"></i>
+                                            <i class="fa fa-check-circle test-result-passed"></i>
                                         }
                                         else if (runResult.Outcome == "NotExecuted")
                                         {
-                                            <i class="fa fa-cancel test-result-not-executed"></i>
+                                            <i class="fa fa-warning test-result-not-executed"></i>
                                         }
                                         else
                                         {
@@ -144,7 +143,6 @@
                                     <span>@runResult.Duration</span>
                                 </div>
                             }
-                            @*      } *@
                         </div>
                     </div>
                 }
@@ -213,7 +211,7 @@
             });
         }
 
-        $('.secondary .test-history-btn').data('test-name', className + '.' + methodName);
+        $('.secondary .test-history-btn').data('test-name', className + '.' + name);
         $('.secondary .test-history').html('');
 
         $('.main').addClass('details');
@@ -221,6 +219,7 @@
 
     function getHistory(elem) {
         let testName = $(elem).data('test-name');
+        console.log(testName);
         SendRequest({
             url: '/History/' + testName,
             method: 'GET',
@@ -297,6 +296,12 @@
                 $(jobContainers[i]).find('.test-result-job').removeClass('show-test-results');
             }
         }
+    }
+    var searchByName = '@Model.SearchTestName'
+
+    if (searchByName) {
+        $('#searchByName').val(searchByName);
+        search();
     }
 </script>
 
@@ -402,10 +407,6 @@
         width: 100%;
         height: 100%;
         background: black;
-    }
-
-    .hidden {
-        display: none;
     }
 
     .test-history,

@@ -10,5 +10,6 @@ namespace TestHistory.Business
         public GitlabPipeDetails GitlabData { get; set; }
         public string CommitTitle { get; set; }
         public string CommitSha { get; set; }
+        public string SearchTestName { get;  set; }
     }
 }

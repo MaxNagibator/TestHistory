@@ -5,10 +5,10 @@ namespace TestHistory.Business
     [XmlRoot(ElementName = "Times", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
     public class Times
     {
-        [XmlAttribute(AttributeName = "creation")]
-        public string Creation { get; set; }
-        [XmlAttribute(AttributeName = "queuing")]
-        public string Queuing { get; set; }
+        //[XmlAttribute(AttributeName = "creation")]
+        //public string Creation { get; set; }
+        //[XmlAttribute(AttributeName = "queuing")]
+        //public string Queuing { get; set; }
         [XmlAttribute(AttributeName = "start")]
         public string Start { get; set; }
         [XmlAttribute(AttributeName = "finish")]
@@ -259,12 +259,12 @@ namespace TestHistory.Business
     {
         [XmlElement(ElementName = "Counters", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
         public Counters Counters { get; set; }
-        [XmlElement(ElementName = "Output", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
-        public Output Output { get; set; }
-        [XmlElement(ElementName = "RunInfos", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
-        public RunInfos RunInfos { get; set; }
-        [XmlAttribute(AttributeName = "outcome")]
-        public string Outcome { get; set; }
+        //[XmlElement(ElementName = "Output", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+        //public Output Output { get; set; }
+        //[XmlElement(ElementName = "RunInfos", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+        //public RunInfos RunInfos { get; set; }
+        //[XmlAttribute(AttributeName = "outcome")]
+        //public string Outcome { get; set; }
     }
 
     /// <summary>
@@ -281,19 +281,19 @@ namespace TestHistory.Business
         public Results Results { get; set; }
         [XmlElement(ElementName = "TestDefinitions", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
         public TestDefinitions TestDefinitions { get; set; }
-        [XmlElement(ElementName = "TestEntries", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
-        public TestEntries TestEntries { get; set; }
-        [XmlElement(ElementName = "TestLists", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
-        public TestLists TestLists { get; set; }
+        //[XmlElement(ElementName = "TestEntries", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+        //public TestEntries TestEntries { get; set; }
+        //[XmlElement(ElementName = "TestLists", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
+        //public TestLists TestLists { get; set; }
         [XmlElement(ElementName = "ResultSummary", Namespace = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010")]
         public ResultSummary ResultSummary { get; set; }
         [XmlAttribute(AttributeName = "id")]
         public string Id { get; set; }
-        [XmlAttribute(AttributeName = "name")]
-        public string Name { get; set; }
-        [XmlAttribute(AttributeName = "runUser")]
-        public string RunUser { get; set; }
-        [XmlAttribute(AttributeName = "xmlns")]
-        public string Xmlns { get; set; }
+        //[XmlAttribute(AttributeName = "name")]
+        //public string Name { get; set; }
+        //[XmlAttribute(AttributeName = "runUser")]
+        //public string RunUser { get; set; }
+        //[XmlAttribute(AttributeName = "xmlns")]
+        //public string Xmlns { get; set; }
     }
 }

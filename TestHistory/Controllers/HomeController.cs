@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net.Http;
+using System.Xml.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using TestHistory.Business;
@@ -42,7 +43,8 @@ namespace TestHistory.Controllers
 
         [Route("/{pipeid}")]
         [Route("/Pipe/{pipeid}")]
-        public async Task<IActionResult> Details(string pipeId)
+        [Route("/ByTestName/{pipeid}/{testName}")]
+        public async Task<IActionResult> Details(string pipeId, string testName = null)
         {
             // асинком потом запрос кинуть и можно аватарки подгружать :) 
             //        C: \Users\max > curl--header "PRIVATE-TOKEN: {Globals.Settings.GitlabAccessToken}" "https://gitlab.agroassist.ru/api/v4/projects/172/pipelines/25180"
@@ -55,7 +57,7 @@ namespace TestHistory.Controllers
             viewModel.CommitSha = result.CommitSha;
             viewModel.GitlabData = result.GitlabData;
             //// соберём новый объект так как останется в оперативке этот большой шмат говна
-            viewModel.TestResults = result.TestResults.Select(x => TestResultParser.ProcessTestDir(x.StorePath)).ToList();
+            viewModel.TestResults = result.TestResults.Select(x => TestResultParser.ProcessTestDir(x.StorePath, (ex, x) => _logger.LogError(ex, x))).ToList();
             //if(result.GitlabData == null)
             //try
             //{
@@ -66,30 +68,9 @@ namespace TestHistory.Controllers
             //{
 
             //}
+            viewModel.SearchTestName = testName;
             return View(viewModel);
         }
-
-        //public async Task<IActionResult> GetDataFromGitlabPipe(string pipeId)
-        //{
-        //    var model = await GetGitlabData(pipeId);
-        //    return PartialView("GitlabPipe", model);
-        //}
-
-        //private async Task<GitlabPipeDetails> GetGitlabData(string pipeId)
-        //{
-        //    var pipeIdCache = Path.Combine(Globals.Settings.ResultsPath, pipeId + ".details.txt");
-        //    string responseString;
-        //    if (System.IO.File.Exists(pipeIdCache))
-        //    {
-        //        responseString = System.IO.File.ReadAllText(pipeIdCache);
-        //    }
-        //    else
-        //    {
-        //        responseString = await client.GetStringAsync("https://gitlab.agroassist.ru/api/v4/projects/172/pipelines/" + pipeId);
-        //    }
-        //    var model = JsonConvert.DeserializeObject<GitlabPipeDetails>(responseString);
-        //    return model;
-        //}
 
         [Route("/Files/{resultId}/{relativeResultsDirectory}/{*path}")]
         public async Task<IActionResult> GetFile(Guid resultId, Guid relativeResultsDirectory, string path)
@@ -99,23 +80,15 @@ namespace TestHistory.Controllers
             var fileName = Path.GetFileName(fullPath);
             string file_type = "image/png";
             return File(System.IO.File.ReadAllBytes(fullPath), "image/png", fileName);
-
-            using (var str = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
-            {
-                return new FileStreamResult(str, file_type)
-                {
-                    FileDownloadName = fileName
-                };
-                return File(str, file_type, fileName);
-            }
-
-            return PhysicalFile(fullPath, file_type, fileName);
         }
 
         [Route("/History/{testName}")]
         public async Task<IActionResult> GetHistory(string testName)
         {
-            var model = _keeper.GetHistoryContainer(testName);
+            var runs = _keeper.GetHistoryContainer(testName);
+            var model = new HistoryModel();
+            model.HistoryRuns = runs;
+            model.TestName = runs.First().TestName;
             return PartialView("History", model);
         }
 
