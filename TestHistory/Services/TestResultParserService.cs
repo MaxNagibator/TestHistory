@@ -7,6 +7,7 @@ namespace TestHistory.Services
     {
         private readonly ILogger<TestResultParserService> _logger;
         private readonly TestResultKeeper _testResultKeeper;
+        private bool _isInitialComplete;
         private Timer? _timer = null;
         private bool _isInProcess = false;
 
@@ -18,33 +19,7 @@ namespace TestHistory.Services
 
         public async Task StartAsync(CancellationToken stoppingToken)
         {
-            var startDate = DateTime.Now;
             _logger.LogInformation("TestResultParserService running.");
-
-            var dateDirs = Directory.GetDirectories(Globals.Settings.ResultsPath);
-            foreach (var dateDir in dateDirs.OrderBy(x => x))
-            {
-                _logger.LogInformation("check " + dateDir);
-                var dt = Path.GetFileName(dateDir);
-                var dirs = Directory.GetDirectories(dateDir);
-                foreach (var dir in dirs)
-                {
-                    var folderName = Path.GetFileName(dir);
-                    _logger.LogInformation("check " + folderName);
-                    var result = TestResultParser.ProcessTestDir(dir);
-                    if (result != null)
-                    {
-                        result.DateDir = dt;
-                        var success = _testResultKeeper.AddTestResult(result);
-                        if (!success)
-                        {
-                            _logger.LogWarning(result.Id + " exists");
-                        }
-                    }
-                }
-            }
-            var totalTime = (DateTime.Now - startDate).TotalSeconds;
-            _logger.LogInformation("load time " + totalTime + "sec");
 
             _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
         }
@@ -57,10 +32,68 @@ namespace TestHistory.Services
             }
             _isInProcess = true;
 
+            if (!_isInitialComplete)
+            {
+                _logger.LogInformation("execute ProcessResults");
+                ProcessResults();
+
+                _isInitialComplete = true;
+            }
+            else
+            {
+                _logger.LogInformation("execute ProcessPrepared");
+                ProcessPrepared();
+
+            }
+
+            _isInProcess = false;
+        }
+
+        private void ProcessResults()
+        {
+            var startDate = DateTime.Now;
+            var dateDirs = Directory.GetDirectories(Globals.Settings.ResultsPath);
+            var processDirs = new List<DirProps>();
+            foreach (var dateDir in dateDirs.OrderByDescending(x => x))
+            {
+                var dt = Path.GetFileName(dateDir);
+                var dirs = Directory.GetDirectories(dateDir);
+                foreach (var dir in dirs)
+                {
+                    processDirs.Add(new DirProps { Path = dir, DateDir = dt });
+                }
+            }
+            Parallel.ForEach(processDirs, new ParallelOptions { MaxDegreeOfParallelism = 4 }, dir =>
+            {
+                var folderName = Path.GetFileName(dir.Path);
+                _logger.LogInformation("execute " + dir.DateDir + " " + folderName);
+                var result = TestResultParser.ProcessTestDir(dir.Path, (ex, x) => _logger.LogError(ex, x)); // оптимизировать тут
+                if (result != null)
+                {
+                    result.DateDir = dir.DateDir;
+                    var success = _testResultKeeper.AddTestResult(result); // оптимизировать тут
+                    if (!success)
+                    {
+                        _logger.LogWarning(result.Id + " exists");
+                    }
+                }
+            });
+            var totalTime = (DateTime.Now - startDate).TotalSeconds;
+            _logger.LogInformation("load time " + totalTime + "sec");
+        }
+
+        private class DirProps
+        {
+            public string Path { get; set; }
+            public string DateDir { get; set; }
+        }
+
+        private void ProcessPrepared()
+        {
             var dirs = Directory.GetDirectories(Globals.Settings.PreparedPath);
             foreach (var dir in dirs)
             {
-                var result = TestResultParser.ProcessTestDir(dir);
+                var result = TestResultParser.ProcessTestDir(dir, (ex, x) => _logger.LogError(ex, x));
                 if (result != null)
                 {
                     //2024-04-16T14:43:08.2032627+07:00
@@ -84,8 +117,6 @@ namespace TestHistory.Services
                     }
                 }
             }
-
-            _isInProcess = false;
         }
 
         public async Task StopAsync(CancellationToken stoppingToken)
